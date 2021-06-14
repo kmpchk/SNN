@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Output folder
+out/*
+
+# CLion config folder
+.idea/*
