@@ -7,5 +7,7 @@ add_executable(
         src/main.cpp
         src/Network.h
         src/Neuron.h
+        src/Neuron.cpp
         src/Synapse.h
+        src/Synapse.cpp
 )

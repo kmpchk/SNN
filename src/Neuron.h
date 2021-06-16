@@ -6,13 +6,14 @@
 #include <chrono>
 #include <vector>
 #include "Synapse.h"
+#include "structs.h"
 
 using namespace std;
 
-using milliseconds = chrono::duration<uint64_t, ratio<1, 1000>>;
-using timestamp = chrono::steady_clock::time_point;
+//using milliseconds = chrono::duration<uint64_t, ratio<1, 1000>>;
+//using timestamp = chrono::steady_clock::time_point;
 
-typedef SYNAPSE_TYPE NEURON_TYPE;
+class Synapse;
 
 class Neuron {
 private:
@@ -21,32 +22,32 @@ private:
 	int8_t current_potential;
 	uint64_t spike_time;
 	vector<Synapse*> synapses;
+    int8_t leak = 0;
+    int8_t noise = 0;
+    bool fired = false;
+    bool potential_enough = false;
+
+    void genLeak();
+    void genNoise();
 
 public:
-	Neuron(NEURON_TYPE neuron_type) {
-		this->current_potential = 1;
-		this->spike_time = 0;
-		// synapses[0] = Axon
-		synapses.emplace_back(new Synapse(this, neuron_type));
-	}
+	Neuron(NEURON_TYPE neuron_type);
 
 	~Neuron() = default;
 
-	void connect(Neuron *neuron)
-    {
-        synapses[0]->connect(neuron);
-        neuron->addSynapse(synapses[0]);
-    }
+	void connect(Neuron *neuron);
 
-    void addSynapse(Synapse* s)
-    {
-        synapses.push_back(s);
-    }
+    void addSynapse(Synapse* s);
 
-	void spike()
-	{
+	void spike();
 
-	}
+	void calculatePotential();
+
+    uint64_t getSpikeTime();
+
+    bool isFired();
+
+    bool isPotentialEnough();
 };
 
 #endif //SNN_NEURON_H

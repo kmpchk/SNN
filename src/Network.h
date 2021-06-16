@@ -6,8 +6,7 @@
 #include <tuple>
 #include <random>
 #include <cstdio>
-
-typedef NEURON_TYPE GROUP_TYPE;
+#include "structs.h"
 
 class Network {
 
