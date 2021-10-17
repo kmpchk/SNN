@@ -1,120 +1,97 @@
 #ifndef SNN_NETWORK_H
 #define SNN_NETWORK_H
 
+#include "Connection.h"
 #include "Neuron.h"
-#include <string>
-#include <tuple>
-#include <random>
-#include <cstdio>
-#include "structs.h"
+#include "Generator.h"
+
+// C++
+#include <unordered_map>
+
+// ThirdParty
+#include "spdlog/spdlog.h"
+
+/*
+ * INDEX --- GROUP NAME
+ *   0   ---  SER (RED CAMERA)
+ *   1   ---  SER (GREEN CAMERA)
+ *   2   ---  DA ()
+ */
 
 class Network {
-
-    typedef vector<Neuron> *NeuronGroup;
-    typedef vector<size_t> *Connections;
-
 private:
-    vector<tuple<string, NeuronGroup>> neuron_groups;
-    vector<tuple<string, string, Connections>> group_connections;
+    // one-to-one mapping b/w group names and their indices
+    std::unordered_map<std::string, std::uint8_t> neuron_group_names_to_ids;
+    std::uint8_t neuron_group_idx = 0;
+    // one-to-one mapping b/w group indices and their groups
+    std::unordered_map<std::uint8_t, std::vector<Neuron>> neuron_group_ids_to_groups;
+    std::unordered_map<std::string, Generator> generators;
 
 public:
     Network() = default;
 
-    ~Network() {
-        // Clear neuron_groups
-        for (auto neuron_group : neuron_groups) {
-            delete get<1>(neuron_group);
-        }
-        neuron_groups.clear();
+    void run(std::uint32_t sim_steps = 100)
+    {
 
-        // Clear group_connections
-        for (auto group_connection : group_connections) {
-            delete get<2>(group_connection);
+        // Vision generator
+        Generator vision_generator = generators["vision"];
+        int vis_spikes_num = 0;
+
+        // Coin acceptor generator
+        /*std::uint32_t ca_hw_frequency = 30;
+        Generator ca_generator(ca_hw_frequency, sim_steps);
+        int ca_spikes_num = 0;*/
+
+        for (size_t step = 0; step < sim_steps; step++)
+        {
+            // Process vision part (camera)
+            if (vision_generator.fired()) {
+                vis_spikes_num++;
+                spdlog::info("[Vision] Fired at Step: {0}", step);
+            }
+
+            // Process coin acceptor part
+            /*if (ca_generator.fired()) {
+                ca_spikes_num++;
+                spdlog::info("[Coin Acceptor] Fired at Step: {0}", step);
+            }*/
         }
-        group_connections.clear();
+        spdlog::info("[Vision] Spikes: {0}", vis_spikes_num);
+        //spdlog::info("[Coin Acceptor] Spikes: {0}", ca_spikes_num);
     }
 
-    // Print info
-    void info() {
-        // Common info
-        for (auto neuron_group : neuron_groups) {
-            cout << "\n-----------------\n";
-            cout << "Group Name: " << get<0>(neuron_group) << endl;
-            cout << "Neuron Count: " << get<1>(neuron_group)->size() << endl;
-            cout << "-----------------\n";
-        }
+    void create_generator(std::string generator_name, std::uint32_t hw_frequency,
+                          std::uint32_t sim_steps)
+    {
+        // TODO: check for duplicate generator_name
 
-        // Connections
-        for (auto group_connection : group_connections) {
-            cout << "\n-----------------\n";
-            printf("%s -> %s\n", get<0>(group_connection).c_str(), get<1>(group_connection).c_str());
-            auto connections = get<2>(group_connection);
-            for (size_t idx = 0; idx < (*connections).size(); idx++) {
-                cout << "\t[in] = " << idx << " " << "[out] = " << (*connections)[idx] << endl;
-            }
-            cout << "-----------------\n";
-        }
+        generators[generator_name] = Generator(hw_frequency, sim_steps);
     }
 
     // Create neuron group
-    void createGroup(std::string &group_name, GROUP_TYPE group_type, int64_t neuron_count) {
-        NeuronGroup neuron_group = new vector<Neuron>(neuron_count, group_type);
-        neuron_groups.emplace_back(group_name, neuron_group);
+    void create_group(std::string group_name, std::int32_t neuron_count)
+    {
+        // TODO: check neuron_count
+        // TODO: check for duplicate group_name
+
+        // one-to-one mapping b/w group names and their indices
+        neuron_group_names_to_ids[group_name] = neuron_group_idx;
+        neuron_group_ids_to_groups[neuron_group_idx] = std::vector<Neuron>(neuron_count);
+        neuron_group_idx++;
     }
 
-    // Connect group
-    void connectGroup(std::string &in_group_name, std::string &out_group_name) {
-        //cout << "\n-----------------\n";
-        // Get input group
-        auto in_group = find_if(neuron_groups.begin(), neuron_groups.end(),
-                                [&in_group_name](const tuple<string, NeuronGroup> &e) {
-                                    return get<0>(e) == in_group_name;
-                                });
-        if (in_group == neuron_groups.end()) {
-            cout << in_group_name << " not found!" << endl;
-            return;
-        }
+    void connect_generator(std::string generator_name, std::string group_name)
+    {
 
-        // Get output group
-        auto out_group = find_if(neuron_groups.begin(), neuron_groups.end(),
-                                 [&out_group_name](const tuple<string, NeuronGroup> &e) {
-                                     return get<0>(e) == out_group_name;
-                                 });
-        if (out_group == neuron_groups.end()) {
-            cout << out_group_name << " not found!" << endl;
-            return;
-        }
-
-        // Extract vectors
-        NeuronGroup input_neurons = std::get<1>(*in_group);
-        NeuronGroup output_neurons = std::get<1>(*out_group);
-        // Vectors must be the same length!
-        if (input_neurons->size() != output_neurons->size()) {
-            cout << "Vectors must be the same length!\n";
-            return;
-        }
-
-        // Connecting neurons
-        // Connection (DEBUG)
-        Connections connections = new vector<size_t>();
-        size_t neuron_count = input_neurons->size();
-        // 1. Init random generator
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> distrib(0, neuron_count - 1);
-        // 2. Connect groups
-        for (size_t idx = 0; idx < neuron_count; idx++) {
-            auto random_neuron_idx = distrib(gen);
-            (*input_neurons)[idx].connect(&(*output_neurons)[random_neuron_idx]);
-            //cout << "[Input group name]: " << in_group_name << endl;
-            //cout << "[Output group name]: " << out_group_name << endl;
-            //cout << "[Connection]: Input = " << idx << " " << "Output = " << random_neuron_idx << endl;
-            connections->push_back(random_neuron_idx);
-        }
-        group_connections.emplace_back(in_group_name, out_group_name, connections);
-        //cout << "-----------------\n";
     }
 
+    void show_debug_info()
+    {
+        for (const auto &item : neuron_group_names_to_ids) {
+            spdlog::info("Group = {0} | ID = {1} | Neuron count = {2}",
+                         item.first, item.second, neuron_group_ids_to_groups[item.second].size());
+        }
+    }
 };
 
 #endif //SNN_NETWORK_H

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <chrono>
 #include <vector>
+#include <random>
+#include "spdlog/spdlog.h"
 
 #include "Network.h"
 
@@ -9,6 +11,7 @@ int main() {
     //        std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
 
     // Create Spiking Neural Network
+	/*
     Network snn_network;
 
     // Create Input Group #1
@@ -37,6 +40,24 @@ int main() {
 
     // Print info
     snn_network.info();
+    */
+
+	spdlog::info("SNN in action!");
+
+    Network snn_net;
+
+    std::uint32_t sim_steps = 100;
+
+    // Vision generator
+    std::uint32_t vision_hw_frequency = 50;
+    snn_net.create_generator("vision", vision_hw_frequency, sim_steps);
+
+    snn_net.create_group("dopamine", 3);
+    snn_net.create_group("serotonine", 3);
+
+    snn_net.show_debug_info();
+
+    //snn_net.run(100);
 
     return 0;
 }
