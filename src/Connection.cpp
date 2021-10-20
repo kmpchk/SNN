@@ -1,9 +1,9 @@
 #include "Connection.h"
 
-Connection::Connection(Neuron *post, Neuron *pre) : weight(35)
+Connection::Connection() : weight(35)
 {
-	pre_neuron = pre;
-	post_neuron = post;
+	//pre_neuron = pre;
+	//post_neuron = post;
 }
 
 void Connection::transmitSignal()

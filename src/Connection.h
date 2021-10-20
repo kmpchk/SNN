@@ -9,9 +9,12 @@ enum CONNECTION_TYPE {
 	NEURON_TO_NEURON
 };
 
+class Neuron;
+
 class Connection {
 public:
-	Connection(Neuron *post, Neuron *pre);
+	//Connection(Neuron *post, Neuron *pre);
+    Connection();
 
 	void transmitSignal();
 
@@ -19,7 +22,6 @@ public:
 
 	void update();
 
-private:
 	int weight;
 	int spike_transmit_time = 5;
 	std::vector<int> timers;

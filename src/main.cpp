@@ -6,6 +6,24 @@
 
 #include "Network.h"
 
+// Boost::Graph
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/topological_sort.hpp>
+#include <boost/graph/graph_utility.hpp>
+
+// Neuron
+struct Vertex
+{
+    int threshold;
+};
+
+// Synapse
+struct Edge
+{
+    int speed;
+    std::string channel;
+};
+
 int main() {
     //std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
     //        std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
@@ -52,12 +70,15 @@ int main() {
     std::uint32_t vision_hw_frequency = 50;
     snn_net.create_generator("vision", vision_hw_frequency, sim_steps);
 
-    snn_net.create_group("dopamine", 3);
-    snn_net.create_group("serotonine", 3);
+    snn_net.create_group("dopamine", 10);
+    //snn_net.create_group("serotonine", 10);
 
-    snn_net.show_debug_info();
+    snn_net.connect_generator("vision", "dopamine");
+    //snn_net.connect_generator("vision", "serotonine");
 
-    //snn_net.run(100);
+    //snn_net.show_debug_info();
+
+    snn_net.run(sim_steps);
 
     return 0;
 }
