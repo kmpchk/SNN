@@ -8,17 +8,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Boost REQUIRED
         COMPONENTS
-            graph
-)
+        graph
+        )
 
-# Dependencies
 add_subdirectory(contrib)
 
-# Source
 file(GLOB SOURCES src/*.cpp)
 file(GLOB HEADERS src/*.h)
 
 add_executable(Neuron ${SOURCES} ${HEADERS})
-# logging
+
 target_link_libraries(Neuron PUBLIC spdlog::spdlog)
 target_include_directories(Neuron PRIVATE ${Boost_INCLUDE_DIRS})

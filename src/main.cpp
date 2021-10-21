@@ -70,9 +70,11 @@ int main() {
     std::uint32_t vision_hw_frequency = 50;
     snn_net.create_generator("vision", vision_hw_frequency, sim_steps);
 
-    snn_net.create_group("dopamine", 10);
+	// TODO: return group created
+    snn_net.create_group("dopamine", 50);
     //snn_net.create_group("serotonine", 10);
 
+	// TODO: return value
     snn_net.connect_generator("vision", "dopamine");
     //snn_net.connect_generator("vision", "serotonine");
 
