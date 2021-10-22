@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Boost REQUIRED
         COMPONENTS
-        graph
+        system
         )
 
 add_subdirectory(contrib)

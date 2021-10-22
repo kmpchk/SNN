@@ -6,24 +6,6 @@
 
 #include "Network.h"
 
-// Boost::Graph
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/topological_sort.hpp>
-#include <boost/graph/graph_utility.hpp>
-
-// Neuron
-struct Vertex
-{
-    int threshold;
-};
-
-// Synapse
-struct Edge
-{
-    int speed;
-    std::string channel;
-};
-
 int main() {
     //std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
     //        std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
