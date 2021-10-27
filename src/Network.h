@@ -43,6 +43,9 @@ private:
         std::size_t neurons_count = neuron_group.size();
         std::size_t connection_num_mean = neurons_count / 2;
         std::size_t connection_num_stddev = connection_num_mean / 2;
+        //spdlog::info(neurons_count);
+        //spdlog::info("MEAN: {0}", connection_num_mean);
+        //spdlog::info("DEVIATION {0}", connection_num_stddev);
         std::mt19937 rnd(std::random_device{}());
         auto conn_num_dist = NormDist(connection_num_mean, connection_num_stddev);
         // Fill with 0, 1, ..., conn_num
@@ -56,6 +59,10 @@ private:
 
         for (std::size_t n_idx = 0; n_idx < neurons_count; n_idx++) {
             int conn_num = static_cast<int>(std::round(conn_num_dist(rnd)));
+            //for now it is only solution 'cause normal_distribution ALWAYS can give negative number and lognormal_distribution is hard to calculate
+            while (conn_num <= 0){
+            	conn_num = static_cast<int>(std::round(conn_num_dist(rnd)));
+            }
             //spdlog::info("[connect_intra_group] Connection count = {0}", conn_num);
             //group_connections.push_back(Connection())
             // generate a sample of target node ids
@@ -65,6 +72,8 @@ private:
 
             // Out connections
             std::vector<std::uint32_t> sample;
+            //spdlog::info(std::mt19937{std::random_device{}()});
+            //spdlog::info(conn_num);
             std::sample(ids.begin(), ids.end(),
                         std::back_inserter(sample),
                         conn_num,
