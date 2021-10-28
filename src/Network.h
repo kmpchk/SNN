@@ -8,6 +8,7 @@
 
 // ThirdParty
 #include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 #include "Connection.h"
 #include "Generator.h"
@@ -25,6 +26,11 @@ public:
 
     void run(std::uint32_t sim_steps = 100)
     {
+
+        spdlog::trace("Activators count = {0}", activators.size());
+        for (const auto& activator : activators) {
+            spdlog::trace("Activator: {0}, Address = {1}", activator.first, fmt::ptr(activator.second));
+        }
 
         // Vision generator
         int vis_spikes_num = 0;
@@ -70,8 +76,11 @@ public:
     void connect_groups(NeuronGroup *group1, NeuronGroup *group2)
     {
         // Find activator
-        if (group1->group_type == GROUP_TYPE::ACTIVATOR)
-            activators[group1->name] = group1;
+        if (group1->group_type == GROUP_TYPE::ACTIVATOR) {
+            if (!activators.count(group1->name))
+                activators[group1->name] = group1;
+        }
+
         //spdlog::info("[G1] Size = {0}", group1->neurons.size());
         //spdlog::info("[G2] Size = {0}", group2->neurons.size());
         std::size_t group1_neurons_count = group1->count;
@@ -99,17 +108,18 @@ public:
                         conn_num,
                         std::mt19937{std::random_device{}()});
             Neuron &current_neuron = group1->neurons[n_idx];
-            spdlog::info("===========================");
-            spdlog::info("[Post] Neuron = {0}", n_idx);
+            spdlog::trace("===========================");
+            spdlog::trace("[Post] Neuron = {0}", n_idx);
             for (const int &group2_neuron_idx : sample_group2_neuron_ids) {
-                spdlog::info("[Conn] Neuron = {0}", group2_neuron_idx);
+                spdlog::trace("[Conn] Neuron = {0}", group2_neuron_idx);
                 // Group1 post connection
                 current_neuron.post_neurons.emplace_back(&group2->neurons[group2_neuron_idx]);
+                current_neuron.post_conns.emplace_back(Connection());
                 // Group2 pre connection
                 group2->neurons[group2_neuron_idx].pre_neurons.emplace_back(&current_neuron);
             }
-            spdlog::info("[Pre] Neuron = {0}", group1->neurons[n_idx].post_neurons[0]->pre_neurons.size());
-            spdlog::info("===========================");
+            spdlog::trace("[Pre] Neuron = {0}", group1->neurons[n_idx].post_neurons[0]->pre_neurons.size());
+            spdlog::trace("===========================");
         }
     }
 
