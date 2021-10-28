@@ -31,8 +31,8 @@ public:
     std::vector<Connection> pre_conns;
     std::vector<Connection> post_conns;
     bool generator_connected = false;
-    std::vector<std::uint32_t> pre_neurons_idx;
-    std::vector<std::uint32_t> post_neurons_idx;
+    std::vector<Neuron*> pre_neurons;
+    std::vector<Neuron*> post_neurons;
 
 private:
 	double V = voltages::V_REST; // Membrane Potential Voltage
