@@ -34,6 +34,8 @@ public:
     std::vector<Neuron*> pre_neurons;
     std::vector<Neuron*> post_neurons;
 
+    Connection connection;
+
 private:
 	double V = voltages::V_REST; // Membrane Potential Voltage
 };

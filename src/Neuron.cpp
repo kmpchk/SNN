@@ -2,7 +2,7 @@
 
 Neuron::Neuron()
 {
-
+    connection = Connection();
 }
 
 void Neuron::setV(double new_V)
