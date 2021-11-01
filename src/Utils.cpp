@@ -1,12 +1,15 @@
 // C++
 #include <unistd.h>
 #include <memory>
+#include <chrono>
+#include <ctime>
 // SNN
 #include "Utils.h"
 
 void init_logger(spdlog::level::level_enum terminal_log_level,
                  spdlog::level::level_enum file_log_level) {
-    const auto root_log_path = "logs/snn.log";
+    std::time_t end_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    const auto root_log_path = "logs/snn_" + std::string(std::ctime(&end_time)) + ".log";
 
     // Showing logs in terminal
     auto terminal_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
