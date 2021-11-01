@@ -28,13 +28,10 @@ public:
 
 	void update();
 
-    std::vector<Connection> pre_conns;
+    std::vector<Connection*> pre_conns;
     std::vector<Connection> post_conns;
-    bool generator_connected = false;
     std::vector<Neuron*> pre_neurons;
     std::vector<Neuron*> post_neurons;
-
-    Connection connection;
 
 private:
 	double V = voltages::V_REST; // Membrane Potential Voltage
