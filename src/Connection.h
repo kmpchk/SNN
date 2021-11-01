@@ -9,6 +9,11 @@ enum CONNECTION_TYPE {
 	NEURON_TO_NEURON
 };
 
+enum WEIGHT_BOUNDARIES {
+    LOW = 15,
+    HIGH = 35
+};
+
 class Neuron;
 
 class Connection {
@@ -19,6 +24,7 @@ public:
 	int spike_transmit_time = 5;
 	std::vector<int> timers;
 	CONNECTION_TYPE conn_type;
+    Neuron *pre_neuron, *post_neuron;
 };
 
 
