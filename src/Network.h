@@ -15,6 +15,7 @@
 #include "NeuronGroup.h"
 
 typedef std::normal_distribution<float> NormDist;
+typedef std::uniform_int_distribution<> WeightDist;
 
 class Network {
 private:
@@ -90,6 +91,7 @@ public:
 
         std::mt19937 rnd(std::random_device{}());
         auto conn_num_dist = NormDist(connection_num_mean, connection_num_stddev);
+        auto weight_dist = WeightDist(WEIGHT_BOUNDARIES::LOW, WEIGHT_BOUNDARIES::HIGH);
 
         std::vector<std::uint32_t> ids(group2_neurons_count);
         std::iota(std::begin(ids), std::end(ids), 0);
@@ -100,25 +102,34 @@ public:
             while (conn_num <= 0) {
                 conn_num = static_cast<int>(std::round(conn_num_dist(rnd)));
             }
-            // Make connections
+            // Get neuron-neighbors of current neuron
             std::vector<int> sample_group2_neuron_ids;
             std::shuffle(std::begin(ids), std::end(ids), rng);
             std::sample(ids.begin(), ids.end(),
                         std::back_inserter(sample_group2_neuron_ids),
                         conn_num,
                         std::mt19937{std::random_device{}()});
-            Neuron &current_neuron = group1->neurons[n_idx];
             spdlog::trace("===========================");
-            spdlog::trace("[Post] Neuron = {0}", n_idx);
+            spdlog::trace("[Current] Neuron = {0}", n_idx);
             for (const int &group2_neuron_idx : sample_group2_neuron_ids) {
-                spdlog::trace("[Conn] Neuron = {0}", group2_neuron_idx);
-                // Group1 post connection
-                current_neuron.post_neurons.emplace_back(&group2->neurons[group2_neuron_idx]);
-                current_neuron.post_conns.emplace_back(Connection());
-                // Group2 pre connection
+                spdlog::trace("[Connect] Neuron = {0}", group2_neuron_idx);
+                // Group1 post neurons append
+                group1->neurons[n_idx].post_neurons.emplace_back(&group2->neurons[group2_neuron_idx]);
+                // Group2 pre neurons append
                 group2->neurons[group2_neuron_idx].pre_neurons.emplace_back(&group1->neurons[n_idx]);
+                // Make connection b/w pre and post neurons
+                Connection conn;
+                conn.pre_neuron = &group1->neurons[n_idx];
+                conn.post_neuron = &group2->neurons[group2_neuron_idx];
+                conn.weight = weight_dist(rnd);
+                // Group1 post neuron connection
+                group1->neurons[n_idx].post_conns.emplace_back(conn);
+                // Group2 pre neuron connection
+                group2->neurons[group2_neuron_idx].pre_conns.emplace_back(&group1->neurons[n_idx].post_conns.back());
+                spdlog::trace("[POST Conn] Weight = {0}", group1->neurons[n_idx].post_conns.back().weight);
+                spdlog::trace("[PRE Conn] Weight = {0}", group2->neurons[group2_neuron_idx].pre_conns.back()->weight);
             }
-            spdlog::trace("[Pre] Neuron = {0}", group1->neurons[n_idx].post_neurons[0]->pre_neurons.size());
+            spdlog::trace("[Pre] Neuron size = {0}", group1->neurons[n_idx].post_neurons[0]->pre_neurons.size());
             spdlog::trace("===========================");
         }
     }
