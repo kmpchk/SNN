@@ -116,7 +116,7 @@ public:
                 current_neuron.post_neurons.emplace_back(&group2->neurons[group2_neuron_idx]);
                 current_neuron.post_conns.emplace_back(Connection());
                 // Group2 pre connection
-                group2->neurons[group2_neuron_idx].pre_neurons.emplace_back(&current_neuron);
+                group2->neurons[group2_neuron_idx].pre_neurons.emplace_back(&group1->neurons[n_idx]);
             }
             spdlog::trace("[Pre] Neuron = {0}", group1->neurons[n_idx].post_neurons[0]->pre_neurons.size());
             spdlog::trace("===========================");
