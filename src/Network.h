@@ -9,7 +9,10 @@
 // ThirdParty
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
+#include "csv.hpp"
+#include "h5pp/h5pp.h"
 
+// SNN
 #include "Connection.h"
 #include "Generator.h"
 #include "NeuronGroup.h"
@@ -46,6 +49,14 @@ public:
             std::cout << activator.first << " : " << activator.second << "\n";
         }*/
 
+        NeuronGroup *green_group = activators["vision_green"];
+        NeuronGroup *red_group = activators["vision_red"];
+        NeuronGroup *real_coin = activators["real_coin"];
+        NeuronGroup *fake_coin = activators["fake_coin"];
+
+        std::mt19937 rnd(std::random_device{}());
+        std::uniform_int_distribution<> distrib(0, 1);
+
         for (size_t step = 0; step < sim_steps; step++)
         {
             //simulate_generator_connections();
@@ -53,6 +64,31 @@ public:
             /*if (vision_generator.fired()) {
                 vis_spikes_num++;
                 spdlog::info("[Vision] Fired at Step: {0}", step);
+            }*/
+            // read vision ROS topic once
+            // return value can be -1, 0, 1
+            // group testing
+            // 0 - red not detected, 1 - red detected
+
+            int red_vision_ret = distrib(rnd);
+            if (red_vision_ret == 1)
+            {
+                // red group spikes
+                //simulate_activator(red_group);
+            }
+            else if (red_vision_ret == 0)
+            {
+                // red group does not spike
+            }
+
+            /*else if (vision_ret == -1)
+            {
+                // red group spikes
+                simulate_activator(red_group);
+            }
+            else
+            {
+                // nothing
             }*/
 
             // Process coin acceptor part
@@ -63,6 +99,32 @@ public:
         }
         //spdlog::info("[Vision] Spikes: {0}", vis_spikes_num);
         //spdlog::info("[Coin Acceptor] Spikes: {0}", ca_spikes_num);
+    }
+
+    void simulate_activator(NeuronGroup *activator)
+    {
+        std::size_t mean = activator->count / 4;
+        std::size_t stddev = mean / 3;
+        std::mt19937 rnd(std::random_device{}());
+        auto norm_dist = NormDist(mean, stddev);
+
+        int activated_neurons_count = static_cast<int>(std::round(norm_dist(rnd)));
+        while (activated_neurons_count <= 0) {
+            activated_neurons_count = static_cast<int>(std::round(norm_dist(rnd)));
+        }
+
+        std::vector<Neuron> act_nrns;
+        std::sample(activator->neurons.begin(), activator->neurons.end(),
+                    std::back_inserter(act_nrns),
+                    activated_neurons_count,
+                    std::mt19937{std::random_device{}()});
+
+        for (Neuron &act_nrn : act_nrns) {
+            act_nrn.set_fired(true);
+            for (Connection &conn : act_nrn.post_conns) {
+                conn.timers.push_back(2); // 2 ticks for transmitting signal
+            }
+        }
     }
 
     // Create neuron group
