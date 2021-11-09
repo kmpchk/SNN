@@ -18,5 +18,5 @@ file(GLOB HEADERS src/*.h)
 
 add_executable(Neuron ${SOURCES} ${HEADERS})
 
-target_link_libraries(Neuron PUBLIC spdlog::spdlog)
-target_include_directories(Neuron PRIVATE ${Boost_INCLUDE_DIRS})
+target_link_libraries(Neuron PUBLIC spdlog::spdlog csv h5pp::h5pp)
+target_include_directories(Neuron PRIVATE ${Boost_INCLUDE_DIRS} ${CSV_INCLUDE_DIR})
