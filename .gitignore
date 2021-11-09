@@ -36,4 +36,4 @@ out/*
 
 # CLion config folder
 .idea/*
-.build/*
+build/
