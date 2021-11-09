@@ -28,13 +28,20 @@ public:
 
 	void update();
 
+    bool fired() const;
+
+    void set_fired(bool is_fired);
+
     std::vector<Connection*> pre_conns;
     std::vector<Connection> post_conns;
     std::vector<Neuron*> pre_neurons;
     std::vector<Neuron*> post_neurons;
 
+    int id;
+
 private:
 	double V = voltages::V_REST; // Membrane Potential Voltage
+    bool is_fired = false;
 };
 
 

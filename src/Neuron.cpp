@@ -19,3 +19,13 @@ void Neuron::update()
 {
 
 }
+
+bool Neuron::fired() const
+{
+    return is_fired;
+}
+
+void Neuron::set_fired(bool is_fired)
+{
+    this->is_fired = is_fired;
+}
