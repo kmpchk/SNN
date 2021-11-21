@@ -1,9 +1,6 @@
 [submodule "contrib/spdlog"]
 	path = contrib/spdlog
 	url = https://github.com/gabime/spdlog.git
-[submodule "contrib/csv-parser"]
-	path = contrib/csv-parser
-	url = https://github.com/vincentlaucsb/csv-parser.git
 [submodule "contrib/h5pp"]
 	path = contrib/h5pp
 	url = https://github.com/DavidAce/h5pp
