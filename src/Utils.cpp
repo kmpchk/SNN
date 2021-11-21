@@ -30,3 +30,11 @@ void init_logger(spdlog::level::level_enum terminal_log_level,
     spdlog::info("Process has started with PID = {0}", ::getpid());
     spdlog::info("Project log dir: {0}", root_log_path);
 }
+
+int normalize_number(double value, double min, double max, double new_min, double new_max)
+{
+    int new_val = (new_max - new_min) / (max - min) * (value - min) + new_min;
+    if (new_val > new_max)
+        new_val = new_max;
+    return new_val;
+}

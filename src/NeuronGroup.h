@@ -9,8 +9,8 @@
 #include "Neuron.h"
 
 enum GROUP_TYPE {
-    ACTIVATOR,
-    USUAL_NEURON
+    INPUT,
+    HIDDEN
 };
 
 typedef struct _GroupOptions

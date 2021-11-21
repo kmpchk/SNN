@@ -3,18 +3,22 @@
 #include "Utils.h"
 #include "Network.h"
 
-int main() {
+int main(int argc, char **argv) {
 
     spdlog::info("SNN in action!");
+
+    // Init ROS node
+    ros::init(argc, argv, "SNN");
+    ros::NodeHandle node_handle;
 
     // Init logger
     init_logger(spdlog::level::debug, spdlog::level::trace);
 
     // Create Spiking Neural Network
-    Network snn_net;
+    Network snn_net(node_handle);
 
     // Simulation steps
-    std::uint32_t sim_steps = 100;
+    std::uint32_t sim_steps = 1000;
 
     // Measuring execution time of func
     duration<double, std::milli> func_exec_time;
@@ -23,8 +27,8 @@ int main() {
     auto t1 = high_resolution_clock::now();
     GroupOptions vision_red_group_opts;
     vision_red_group_opts.name = "vision_red";
-    vision_red_group_opts.neurons_count = 50;
-    vision_red_group_opts.group_type = GROUP_TYPE::ACTIVATOR;
+    vision_red_group_opts.neurons_count = 124;
+    vision_red_group_opts.group_type = GROUP_TYPE::INPUT;
     NeuronGroup vision_red_group = snn_net.create_group(vision_red_group_opts);
     auto t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
@@ -36,7 +40,7 @@ int main() {
     GroupOptions vision_green_group_opts;
     vision_green_group_opts.name = "vision_green";
     vision_green_group_opts.neurons_count = 50;
-    vision_green_group_opts.group_type = GROUP_TYPE::ACTIVATOR;
+    vision_green_group_opts.group_type = GROUP_TYPE::INPUT;
     NeuronGroup vision_green_group = snn_net.create_group(vision_green_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
@@ -48,7 +52,7 @@ int main() {
     GroupOptions fake_coin_group_opts;
     fake_coin_group_opts.name = "fake_coin";
     fake_coin_group_opts.neurons_count = 50;
-    fake_coin_group_opts.group_type = GROUP_TYPE::ACTIVATOR;
+    fake_coin_group_opts.group_type = GROUP_TYPE::INPUT;
     NeuronGroup fake_coin_group = snn_net.create_group(fake_coin_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
@@ -61,7 +65,7 @@ int main() {
     GroupOptions real_coin_group_opts;
     real_coin_group_opts.name = "real_coin";
     real_coin_group_opts.neurons_count = 50;
-    real_coin_group_opts.group_type = GROUP_TYPE::ACTIVATOR;
+    real_coin_group_opts.group_type = GROUP_TYPE::INPUT;
     NeuronGroup real_coin_group = snn_net.create_group(real_coin_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
@@ -73,7 +77,7 @@ int main() {
     GroupOptions serotonin_group_opts;
     serotonin_group_opts.name = "serotonin";
     serotonin_group_opts.neurons_count = 50;
-    serotonin_group_opts.group_type = GROUP_TYPE::USUAL_NEURON;
+    serotonin_group_opts.group_type = GROUP_TYPE::HIDDEN;
     NeuronGroup serotonin_group = snn_net.create_group(serotonin_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
@@ -84,8 +88,8 @@ int main() {
     t1 = high_resolution_clock::now();
     GroupOptions dopamine_group_opts;
     dopamine_group_opts.name = "dopamine";
-    dopamine_group_opts.neurons_count = 50;
-    dopamine_group_opts.group_type = GROUP_TYPE::USUAL_NEURON;
+    dopamine_group_opts.neurons_count = 163;
+    dopamine_group_opts.group_type = GROUP_TYPE::HIDDEN;
     NeuronGroup dopamine_group = snn_net.create_group(dopamine_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
@@ -106,7 +110,7 @@ int main() {
 
     // Vision Green -> Dopamine
     t1 = high_resolution_clock::now();
-    snn_net.connect_groups(&vision_green_group, &serotonin_group);
+    //snn_net.connect_groups(&vision_green_group, &serotonin_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
@@ -118,7 +122,7 @@ int main() {
 
     // Fake Coin -> Dopamine
     t1 = high_resolution_clock::now();
-    snn_net.connect_groups(&fake_coin_group, &dopamine_group);
+    //snn_net.connect_groups(&fake_coin_group, &dopamine_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
@@ -128,7 +132,7 @@ int main() {
 
     // Fake Coin -> Serotonin
     t1 = high_resolution_clock::now();
-    snn_net.connect_groups(&fake_coin_group, &serotonin_group);
+    //snn_net.connect_groups(&fake_coin_group, &serotonin_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
@@ -138,7 +142,7 @@ int main() {
 
     // Real Coin -> Dopamine
     t1 = high_resolution_clock::now();
-    snn_net.connect_groups(&real_coin_group, &dopamine_group);
+    //snn_net.connect_groups(&real_coin_group, &dopamine_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
@@ -148,7 +152,7 @@ int main() {
 
     // Real Coin -> Serotonin
     t1 = high_resolution_clock::now();
-    snn_net.connect_groups(&real_coin_group, &serotonin_group);
+    //snn_net.connect_groups(&real_coin_group, &serotonin_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",

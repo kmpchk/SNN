@@ -19,5 +19,6 @@ using std::chrono::seconds;
 void init_logger(spdlog::level::level_enum terminal_log_level,
                  spdlog::level::level_enum file_log_level);
 
+int normalize_number(double value, double min, double max, double new_min, double new_max);
 
 #endif //SNN_UTILS_H

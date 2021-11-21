@@ -2,6 +2,7 @@
 #define SNN_CONNECTION_H
 
 #include <vector>
+#include <string>
 #include "Neuron.h"
 
 enum CONNECTION_TYPE {
@@ -23,8 +24,9 @@ public:
 	int weight;
 	int spike_transmit_time = 5;
 	std::vector<int> timers;
+    std::string ID;
 	CONNECTION_TYPE conn_type;
-    Neuron *pre_neuron, *post_neuron;
+    Neuron *pre_neuron = nullptr, *post_neuron = nullptr;
 };
 
 

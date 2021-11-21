@@ -4,6 +4,7 @@
 #include "Connection.h"
 #include <vector>
 #include <cstdint>
+#include <functional>
 
 namespace voltages {
 	inline constexpr auto V_REST = -70;
@@ -32,15 +33,19 @@ public:
 
     void set_fired(bool is_fired);
 
+    bool spiked() const;
+
     std::vector<Connection*> pre_conns;
+    //std::vector<std::reference_wrapper<Connection>> pre_conns;
     std::vector<Connection> post_conns;
     std::vector<Neuron*> pre_neurons;
+    //std::vector<std::reference_wrapper<Neuron>> pre_neurons;
     std::vector<Neuron*> post_neurons;
+    //std::vector<std::reference_wrapper<Neuron>> post_neurons;
 
     int id;
 
-private:
-	double V = voltages::V_REST; // Membrane Potential Voltage
+    int V = voltages::V_REST; // Membrane Potential Voltage
     bool is_fired = false;
 };
 

@@ -12,7 +12,7 @@ NeuronGroup::NeuronGroup(GroupOptions &group_opts)
         neurons[idx].id = idx;
     }
     // by default, activator group is fired
-    /*if (group_type == GROUP_TYPE::ACTIVATOR) {
+    /*if (group_type == GROUP_TYPE::INPUT) {
         for (Neuron& neuron: neurons)
             neuron.set_fired(true);
     }*/
