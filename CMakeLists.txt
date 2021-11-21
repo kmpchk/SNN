@@ -6,6 +6,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Release
+set(CMAKE_BUILD_TYPE Release)
+# Show all errors
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+# High optimization level
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 find_package(catkin REQUIRED COMPONENTS
         roscpp
@@ -20,8 +26,8 @@ find_package(Boost REQUIRED
 
 add_subdirectory(contrib)
 
-file(GLOB SOURCES src/*.cpp)
-file(GLOB HEADERS src/*.h)
+set(SOURCE_FILES src/main.cpp src/Connection.cpp src/Neuron.cpp src/NeuronGroup.cpp src/Utils.cpp)
+set(HEADER_FILES src/Connection.h src/Network.h src/Neuron.h src/NeuronGroup.h src/Utils.h src/structs.h)
 
 catkin_package(
         #  INCLUDE_DIRS include
@@ -30,7 +36,7 @@ catkin_package(
         # DEPENDS spdlog h5pp Boost
 )
 
-add_executable(Neuron ${SOURCES} ${HEADERS})
+add_executable(SNN ${SOURCE_FILES} ${HEADER_FILES})
 
 target_link_libraries(SNN PUBLIC spdlog::spdlog h5pp::h5pp ${catkin_LIBRARIES})
 target_include_directories(SNN PRIVATE ${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
