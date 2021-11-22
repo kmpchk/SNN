@@ -80,8 +80,19 @@ public:
     void run(std::uint32_t sim_steps = 100)
     {
 
+        // Wait for incoming messages
         spdlog::debug("Initialization...");
-        ros::Duration(0.5).sleep();
+        duration<double, std::milli> code_exec_time;
+        auto t1 = high_resolution_clock::now();
+        // Before we continue, there must be at least one message in buffers
+        while (red_vis_data.empty()) {
+            //spdlog::debug("No incoming message. Waiting...");
+            ros::Duration(0.001).sleep();
+        }
+        code_exec_time = (high_resolution_clock::now() - t1);
+        spdlog::debug("[Initialization] Init exec time {0} (ms)", code_exec_time.count());
+
+        //ros::Duration(0.5).sleep();
 
         spdlog::trace("Input groups count = {0}", input_neuron_groups.size());
         for (const auto& input_neuron_group : input_neuron_groups) {
