@@ -90,7 +90,7 @@ public:
 
     pair<Neuron *, WeightType> connect(Neuron &neuron) {
         const WeightType DEFAULT_WEIGHT = 128;
-        threshold = (in.size() + 1) * DEFAULT_WEIGHT / 2;
+        threshold = (in.size() + 1) * DEFAULT_WEIGHT / 4;
         neuron.out.push_back(this);
         return in.emplace_back(&neuron, DEFAULT_WEIGHT);
     }
