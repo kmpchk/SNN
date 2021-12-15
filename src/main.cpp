@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
     auto t1 = high_resolution_clock::now();
     GroupOptions vision_red_group_opts;
     vision_red_group_opts.name = "vision_red";
-    vision_red_group_opts.neurons_count = 450;
+    vision_red_group_opts.neurons_count = 150;
     vision_red_group_opts.group_type = GroupType::INPUT;
     vision_red_group_opts.neurons_type = NeuronType::Excitatory;
     NeuronGroup vision_red_group = snn_net.create_group(vision_red_group_opts);
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     t1 = high_resolution_clock::now();
     GroupOptions serotonin_group_opts;
     serotonin_group_opts.name = "serotonin_red_vision";
-    serotonin_group_opts.neurons_count = 220;
+    serotonin_group_opts.neurons_count = 150;
     serotonin_group_opts.group_type = GroupType::HIDDEN;
     serotonin_group_opts.neurons_type = NeuronType::Excitatory;
     NeuronGroup serotonin_red_group = snn_net.create_group(serotonin_group_opts);
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
     // Bad Motor Cortex (MT) for Serotonin (5-HT)
     t1 = high_resolution_clock::now();
     mt_dopamine_group_opts.name = "bad_mt_serotonin";
-    mt_dopamine_group_opts.neurons_count = 10;
+    mt_dopamine_group_opts.neurons_count = 100;
     mt_dopamine_group_opts.group_type = GroupType::OUTPUT;
     mt_dopamine_group_opts.neurons_type = NeuronType::Excitatory;
     NeuronGroup bad_mt_serotonin_group = snn_net.create_group(mt_dopamine_group_opts);
@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
 
     // Vision Green -> Dopamine
     t1 = high_resolution_clock::now();
-    //snn_net.connect_groups(&vision_green_group, &dopamine_green_group);
+    snn_net.connect_groups(&vision_green_group, &dopamine_green_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
@@ -201,6 +201,16 @@ int main(int argc, char **argv) {
                   bad_mt_serotonin_group.name, bad_mt_serotonin_group.count,
                   func_exec_time.count());
 
+    // dopamine_green_group -> good_mt_dopamine_group
+    t1 = high_resolution_clock::now();
+    snn_net.connect_groups(&dopamine_green_group, &good_mt_dopamine_group);
+    t2 = high_resolution_clock::now();
+    func_exec_time = (t2 - t1);
+    spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
+                  dopamine_green_group.name, dopamine_green_group.count,
+                  good_mt_dopamine_group.name, good_mt_dopamine_group.count,
+                  func_exec_time.count());
+
     // TODO: SPIKE TIME
     // TODO: RTF
     // TODO: 10 sec sim time to real time
@@ -210,6 +220,10 @@ int main(int argc, char **argv) {
     //snn_net.connect_generator("vision", "serotonine");
 
     //snn_net.debug_info();
+
+    /*for (Neuron &neuron : serotonin_red_group.neurons) {
+        spdlog::debug("Neuron = {0}, In conn num = {1}", neuron.getId(), neuron.getIn().size());
+    }*/
 
     snn_net.run(sim_steps);
 
