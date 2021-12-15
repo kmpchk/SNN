@@ -26,8 +26,8 @@ find_package(Boost REQUIRED
 
 add_subdirectory(contrib)
 
-set(SOURCE_FILES src/main.cpp src/Connection.cpp src/Neuron.cpp src/NeuronGroup.cpp src/Utils.cpp)
-set(HEADER_FILES src/Connection.h src/Network.h src/Neuron.h src/NeuronGroup.h src/Utils.h src/structs.h)
+set(SOURCE_FILES src/main.cpp src/Neuron.h src/NeuronGroup.cpp src/Utils.cpp)
+set(HEADER_FILES src/Network.h  src/Type.h src/NeuronGroup.h src/Utils.h src/structs.h)
 
 catkin_package(
         #  INCLUDE_DIRS include

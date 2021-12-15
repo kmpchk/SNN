@@ -5,7 +5,7 @@ import cv2
 import rospy
 import numpy as np
 
-cap = cv2.VideoCapture(4)  # /dev/video4
+cap = cv2.VideoCapture(2)  # /dev/video4
 
 #cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 #cap.set(cv2.CAP_PROP_BRIGHTHNESS, 0)
@@ -77,4 +77,3 @@ if __name__ == "__main__":
 
     cap.release()
     cv2.destroyAllWindows()
-

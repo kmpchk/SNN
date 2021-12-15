@@ -7,17 +7,13 @@
 NeuronGroup::NeuronGroup(GroupOptions &group_opts)
 {
     group_type = group_opts.group_type;
-    neurons.resize(group_opts.neurons_count);
-    for (int idx = 0; idx < neurons.size(); idx++) {
-        neurons[idx].id = idx;
+    neurons_type = group_opts.neurons_type;
+    neurons.reserve(group_opts.neurons_count);
+    for (int idx = 0; idx < group_opts.neurons_count; idx++) {
+        neurons.emplace_back(Neuron(idx, neurons_type, 1));
     }
-    // by default, activator group is fired
-    /*if (group_type == GROUP_TYPE::INPUT) {
-        for (Neuron& neuron: neurons)
-            neuron.set_fired(true);
-    }*/
     name = group_opts.name;
-    count = neurons.size();
+    count = group_opts.neurons_count;
 }
 
 void NeuronGroup::debug_info()

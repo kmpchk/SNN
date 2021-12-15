@@ -6,18 +6,15 @@
 #include <cstdint>
 
 // SNN
+#include "Type.h"
 #include "Neuron.h"
-
-enum GROUP_TYPE {
-    INPUT,
-    HIDDEN
-};
 
 typedef struct _GroupOptions
 {
     int neurons_count;
     std::string name;
-    GROUP_TYPE group_type;
+    GroupType group_type;
+    NeuronType neurons_type;
 } GroupOptions;
 
 class NeuronGroup {
@@ -30,7 +27,8 @@ public:
     std::vector<Neuron> neurons;
     std::string name;
     int count;
-    GROUP_TYPE group_type;
+    GroupType group_type;
+    NeuronType neurons_type;
 };
 
 

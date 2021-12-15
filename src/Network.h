@@ -10,6 +10,7 @@
 #include <string>
 #include <mutex>
 #include <thread>
+#include <random>
 
 // ThirdParty
 #include "spdlog/spdlog.h"
@@ -24,8 +25,8 @@
 #include <boost/circular_buffer.hpp>
 
 // SNN
-#include "Connection.h"
-#include "Generator.h"
+//#include "Connection.h"
+//#include "Generator.h"
 #include "NeuronGroup.h"
 
 typedef std::normal_distribution<float> NormDist;
@@ -35,6 +36,7 @@ class Network {
 private:
     std::unordered_map<std::string, NeuronGroup*> input_neuron_groups;
     std::unordered_map<std::string, NeuronGroup*> hidden_neuron_groups;
+    std::unordered_map<std::string, NeuronGroup*> output_neuron_groups;
 
     ros::NodeHandle node_handle;
     ros::Subscriber red_vis_sub;
@@ -48,6 +50,9 @@ private:
     std::vector<std::vector<std::uint8_t>> red_neurons_spike_train;
 
     std::size_t cur_sim_step;
+
+    NeuronGroup *red_group_ = nullptr, *serotonin_red_group_ = nullptr, *bad_mt_serotonin_group_ = nullptr;
+    std::unordered_map<int, int> output_neurons_spiked;
 
 public:
     Network() = default;
@@ -94,49 +99,77 @@ public:
 
         //ros::Duration(0.5).sleep();
 
-        spdlog::trace("Input groups count = {0}", input_neuron_groups.size());
+        spdlog::debug("Input groups count = {0}", input_neuron_groups.size());
         for (const auto& input_neuron_group : input_neuron_groups) {
-            spdlog::trace("Input group: {0}, Address = {1}", input_neuron_group.first, fmt::ptr(input_neuron_group.second));
+            spdlog::debug("Input group: {0}, Address = {1}", input_neuron_group.first, fmt::ptr(input_neuron_group.second));
         }
 
-        spdlog::trace("Hidden groups count = {0}", hidden_neuron_groups.size());
+        spdlog::debug("Hidden groups count = {0}", hidden_neuron_groups.size());
         for (const auto& hidden_neuron_group : hidden_neuron_groups) {
-            spdlog::trace("Hidden group: {0}, Address = {1}", hidden_neuron_group.first, fmt::ptr(hidden_neuron_group.second));
+            spdlog::debug("Hidden group: {0}, Address = {1}", hidden_neuron_group.first, fmt::ptr(hidden_neuron_group.second));
+        }
+
+        spdlog::debug("Output groups count = {0}", output_neuron_groups.size());
+        for (const auto& output_neuron_group : output_neuron_groups) {
+            spdlog::debug("Output group: {0}, Address = {1}", output_neuron_group.first, fmt::ptr(output_neuron_group.second));
         }
 
         NeuronGroup *green_group = input_neuron_groups["vision_green"];
 
-        NeuronGroup *red_group = input_neuron_groups["vision_red"];
-        red_neurons_spike_train.resize(red_group->neurons.size(), std::vector<std::uint8_t>(sim_steps, false));
+        red_group_ = input_neuron_groups["vision_red"];
+        serotonin_red_group_ = hidden_neuron_groups["serotonin_red_vision"];
+        bad_mt_serotonin_group_ = output_neuron_groups["bad_mt_serotonin"];
+        //red_neurons_spike_train.resize(red_group->neurons.size(), std::vector<std::uint8_t>(sim_steps, false));
 
-        NeuronGroup *real_coin = input_neuron_groups["real_coin"];
+        //NeuronGroup *real_coin = input_neuron_groups["real_coin"];
 
-        NeuronGroup *fake_coin = input_neuron_groups["fake_coin"];
+        //NeuronGroup *fake_coin = input_neuron_groups["fake_coin"];
 
-        NeuronGroup *dopamine = hidden_neuron_groups["dopamine"];
+        //NeuronGroup *dopamine = hidden_neuron_groups["dopamine"];
 
         /*std::mt19937 rnd(std::random_device{}());
         std::uniform_int_distribution<> distrib(0, 1);*/
 
         // The amount of time to wait before returning if no message is received
-        auto wait_time = ros::Duration(0.001);
+        auto wait_time = ros::Duration(0.01);
 
-        for (size_t step = 0; step < sim_steps; step++)
+        for (size_t step = 0; step < 1000; step++)
         {
             cur_sim_step = step;
 
             spdlog::debug("CURRENT SIM STEP: {0}", cur_sim_step);
 
             const std::lock_guard<std::mutex> lock(red_vis_mutex);
-            spdlog::debug("RED VIS VAL (ROS): {0}", red_vis_data.back());
+            //spdlog::debug("RED VIS VAL (ROS): {0}", red_vis_data.back());
 
             // RED VISION
-            int red_neurons_count_spiked = normalize_number(red_vis_data.back(), 0.0, 1.0, 0.0, red_group->count);
-            simulate_input_group(red_group, red_neurons_count_spiked);
-            simulate_hidden_group(dopamine);
+            int red_neurons_count_spiked = normalize_number(red_vis_data.back(), 0.0, 1.0, 0.0, red_group_->count);
+            //simulate_input_group(red_group, red_neurons_count_spiked);
+            //simulate_hidden_group(dopamine);
+            //spdlog::debug("[Vision RED] spiked = {0}", red_neurons_count_spiked);
+
+            // PROCESS INPUT LAYERS
+            simulate_input_groups(red_neurons_count_spiked);
+
+            // PROCESS HIDDEN LAYERS
+            simulate_hidden_groups();
+
+            // PROCESS OUTPUT LAYERS
+            simulate_out_groups();
+
 
             spdlog::debug("Progress {:.1f}%", step * (100.0 / sim_steps));
+
+            // Workaround
+            wait_time.sleep();
         }
+
+        // MOTOR CORTEX
+        // 1. Calculate OUT groups
+        /*for (auto item : output_neurons_spiked)
+        {
+            spdlog::debug("SIM STEP = {0}, SPIKED OUT = {1}", item.first, item.second);
+        }*/
 
         /*for (std::size_t idx = 0; idx < red_neurons_spike_train.size(); idx++) {
             int spiked_neurons_count = std::count_if(red_neurons_spike_train[idx].begin(),
@@ -171,7 +204,52 @@ public:
         //spdlog::info("[Coin Acceptor] Spikes: {0}", ca_spikes_num);
     }
 
-    void simulate_hidden_group(NeuronGroup *hidden_group)
+    void simulate_input_groups(int red_cnt, int green_cnt=0, int real_cnt=0, int fake_cnt=0)
+    {
+        // RED
+        std::vector<std::reference_wrapper<Neuron>> red_random_neurons;
+        std::sample(red_group_->neurons.begin(), red_group_->neurons.end(),
+                    std::back_inserter(red_random_neurons),
+                    red_cnt,
+                    std::mt19937{std::random_device{}()});
+        // RED layer spikes
+        int spiked = 0;
+        for (const auto& neuron : red_random_neurons) {
+            neuron.get().spike();
+        }
+        for (Neuron& neuron : red_group_->neurons) {
+            auto state = neuron.check(false);
+            if (state == State::ActionStart)
+                spiked++;
+        }
+        spdlog::debug("[INPUT SIMULATION] TIME = {0}, SPIKED = {1}", cur_sim_step, spiked);
+    }
+
+    void simulate_hidden_groups()
+    {
+        // RED -> SER layer checks
+        int spiked = 0;
+        for (Neuron& neuron : serotonin_red_group_->neurons) {
+            auto state = neuron.check(true);
+            if (state == State::ActionStart)
+                spiked++;
+        }
+        spdlog::debug("[HIDDEN SIMULATION] TIME = {0}, SPIKED = {1}", cur_sim_step, spiked);
+    }
+
+    void simulate_out_groups()
+    {
+        int spiked = 0;
+        for (Neuron& neuron : bad_mt_serotonin_group_->neurons) {
+            auto state = neuron.check(true);
+            //spdlog::debug("[OUT] NEURON = {0}, STATE = {1}", neuron.getId(), state);
+            if (state == State::ActionStart)
+                spiked++;
+        }
+        spdlog::debug("[OUT SIMULATION] TIME = {0}, SPIKED = {1}", cur_sim_step, spiked);
+    }
+
+    /*void simulate_hidden_group(NeuronGroup *hidden_group)
     {
         // Process pre connections
         for (Neuron &neuron : hidden_group->neurons) {
@@ -195,7 +273,7 @@ public:
             neuron.V = weight_sum;
             spdlog::trace("[Spike] Neuron {0} : MP = {1} : {2}", neuron.id, neuron.V, neuron.V > 60.0);
         }
-    }
+    }*/
 
     void simulate_input_group(NeuronGroup *input_group, int neurons_count)
     {
@@ -210,7 +288,7 @@ public:
         }*/
 
         // Update post connections
-        for (Neuron &neuron : input_group->neurons) {
+        /*for (Neuron &neuron : input_group->neurons) {
             for (Connection &conn : neuron.post_conns) {
                 for(int &time : conn.timers) {
                     if (time > 0)
@@ -235,7 +313,7 @@ public:
                 conn.timers.push_back(2); // 2 ticks for transmitting signal
                 spdlog::trace("Neuron {0} - timer counts {1}", act_nrn.id, conn.timers.size());
             }
-        }
+        }*/
 
         /*for (Neuron &act_nrn : random_neurons_number) {
             //spdlog::debug("Neuron {0} : Post conns count {1}", act_nrn.id, act_nrn.post_conns.size());
@@ -277,32 +355,100 @@ public:
         return NeuronGroup(group_opts);
     }
 
+    void connect_out_groups(NeuronGroup *group1, NeuronGroup *group2)
+    {
+        // Add output neuron group #2
+        if (group2->group_type == GroupType::OUTPUT) {
+            if (!output_neuron_groups.count(group2->name))
+                output_neuron_groups[group2->name] = group2;
+        }
+
+        for (int g2_n_idx = 0; g2_n_idx < 2; g2_n_idx++) {
+
+            for (Neuron& neuron : group1->neurons) {
+                group2->neurons[g2_n_idx].connect(neuron);
+            }
+
+            //spdlog::debug("[OUT INFO] IN = {0}", group2->neurons[g2_n_idx].getIn().size());
+        }
+
+    }
+
     void connect_groups(NeuronGroup *group1, NeuronGroup *group2)
     {
+        // Check groups
+        assert(group1->group_type != GroupType::OUTPUT);
+        assert(group2->group_type != GroupType::INPUT);
+
         // Add input neuron group #1
-        if (group1->group_type == GROUP_TYPE::INPUT) {
+        if (group1->group_type == GroupType::INPUT) {
             if (!input_neuron_groups.count(group1->name))
                 input_neuron_groups[group1->name] = group1;
         }
         // Add hidden neuron group #1
-        if (group1->group_type == GROUP_TYPE::HIDDEN) {
+        if (group1->group_type == GroupType::HIDDEN) {
             if (!hidden_neuron_groups.count(group1->name))
                 hidden_neuron_groups[group1->name] = group1;
         }
         // Add input neuron group #2
-        if (group2->group_type == GROUP_TYPE::INPUT) {
+        if (group2->group_type == GroupType::INPUT) {
             if (!input_neuron_groups.count(group2->name))
                 input_neuron_groups[group2->name] = group2;
         }
         // Add hidden neuron group #2
-        if (group2->group_type == GROUP_TYPE::HIDDEN) {
+        if (group2->group_type == GroupType::HIDDEN) {
             if (!hidden_neuron_groups.count(group2->name))
                 hidden_neuron_groups[group2->name] = group2;
         }
+        // Add output neuron group #2
+        if (group2->group_type == GroupType::OUTPUT) {
+            if (!output_neuron_groups.count(group2->name))
+                output_neuron_groups[group2->name] = group2;
+        }
+
+        std::mt19937 rnd(std::random_device{}());
+        std::size_t connection_num_mean = group1->count / 4;
+        std::size_t connection_num_stddev = connection_num_mean / 2;
+        auto conn_num_dist = NormDist(connection_num_mean, connection_num_stddev);
+        std::vector<int> ids(group1->count);
+        std::iota(std::begin(ids), std::end(ids), 0);
+
+        for (int g2_n_idx = 0; g2_n_idx < group2->count; g2_n_idx++) {
+            int conn_num = static_cast<int>(std::round(conn_num_dist(rnd)));
+            while (conn_num <= 0) {
+                conn_num = static_cast<int>(std::round(conn_num_dist(rnd)));
+            }
+
+            spdlog::deb
+
+            std::vector<int> sample_group1_neuron_ids;
+            std::shuffle(std::begin(ids), std::end(ids), rnd);
+            std::sample(ids.begin(), ids.end(),
+                        std::back_inserter(sample_group1_neuron_ids),
+                        conn_num,
+                        rnd);
+
+            for (const int &group1_neuron_idx : sample_group1_neuron_ids) {
+                group2->neurons[g2_n_idx].connect(group1->neurons[group1_neuron_idx]);
+            }
+
+            /*for (int g2_n_idx = 0; g2_n_idx < group2->count; g2_n_idx++) {
+
+                for (Neuron& neuron : group1->neurons) {
+                    group2->neurons[g2_n_idx].connect(neuron);
+                }
+
+                //spdlog::debug("[OUT INFO] IN = {0}", group2->neurons[g2_n_idx].getIn().size());
+            }*/
+
+            //std::cout << group2->neurons[g2_n_idx] << std::endl;
+        }
+
+        //spdlog::debug("[split] Size = {0}", group1->neurons.size());
 
         //spdlog::info("[G1] Size = {0}", group1->neurons.size());
         //spdlog::info("[G2] Size = {0}", group2->neurons.size());
-        std::size_t group1_neurons_count = group1->count;
+        /*std::size_t group1_neurons_count = group1->count;
         std::size_t group2_neurons_count = group2->count;
         std::size_t connection_num_mean = group2_neurons_count / 4;
         std::size_t connection_num_stddev = connection_num_mean / 2;
@@ -376,7 +522,7 @@ public:
                 group1->neurons[random_idx].post_conns.push_back(conn);
                 group2->neurons[n_idx].pre_conns.push_back(&group1->neurons[random_idx].post_conns[group1->neurons[random_idx].post_conns.size()-1]);
             }
-        }
+        }*/
     }
 
     void debug_info()

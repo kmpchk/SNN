@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include "Neuron.h"
+#include "v4/Neuron.h"
 
 enum CONNECTION_TYPE {
 	GENERATOR_TO_NEURON,

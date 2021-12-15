@@ -6,7 +6,7 @@
 #include <tuple>
 #include <random>
 #include <cstdio>
-#include "structs.h"
+//#include "structs.h"
 
 class Network {
 
