@@ -24,10 +24,17 @@ find_package(Boost REQUIRED
         system
         )
 
+find_package(SFML REQUIRED
+        COMPONENTS
+        graphics
+        window
+        system
+        )
+        
 add_subdirectory(contrib)
 
-set(SOURCE_FILES src/main.cpp src/Neuron.h src/NeuronGroup.cpp src/Utils.cpp)
-set(HEADER_FILES src/Network.h  src/Type.h src/NeuronGroup.h src/Utils.h src/structs.h)
+set(SOURCE_FILES src/main.cpp src/Neuron.h src/NeuronGroup.cpp src/Utils.cpp src/Drawer.cpp)
+set(HEADER_FILES src/Network.h src/Type.h src/NeuronGroup.h src/Utils.h src/structs.h src/Drawer.h)
 
 catkin_package(
         #  INCLUDE_DIRS include
@@ -38,5 +45,5 @@ catkin_package(
 
 add_executable(SNN ${SOURCE_FILES} ${HEADER_FILES})
 
-target_link_libraries(SNN PUBLIC spdlog::spdlog h5pp::h5pp ${catkin_LIBRARIES})
+target_link_libraries(SNN PUBLIC spdlog::spdlog h5pp::h5pp sfml-graphics sfml-window sfml-system ${catkin_LIBRARIES})
 target_include_directories(SNN PRIVATE ${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})

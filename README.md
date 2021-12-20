@@ -9,6 +9,7 @@ Spiking Neural Network with Optimized Spiking Neuron Model.
 Clone repo:
 ```sh
 git clone --recurse-submodules https://github.com/kmpchk/SNN.git
+sfml installed on linux by default, if not, try: sudo apt-get install libsfml-dev or visit https://www.sfml-dev.org/download.php
 ```
 Build:
 ```sh

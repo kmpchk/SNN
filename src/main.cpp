@@ -4,6 +4,7 @@
 #include "Network.h"
 #include "Type.h"
 #include "Neuron.h"
+#include "Drawer.h"
 
 int main(int argc, char **argv) {
 
@@ -25,6 +26,8 @@ int main(int argc, char **argv) {
     // Measuring execution time of func
     duration<double, std::milli> func_exec_time;
 
+    Drawer drawer = Drawer();
+
 	// Vision red group
     auto t1 = high_resolution_clock::now();
     GroupOptions vision_red_group_opts;
@@ -36,6 +39,7 @@ int main(int argc, char **argv) {
     auto t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", vision_red_group.name, vision_red_group.count, func_exec_time.count());
+    drawer.add_node(1, 1, vision_red_group_opts.name);
     //vision_red_group.debug_info();
 
     // Vision green group
@@ -48,6 +52,7 @@ int main(int argc, char **argv) {
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", vision_green_group.name, vision_green_group.count, func_exec_time.count());
+    drawer.add_node(1, 2, vision_green_group_opts.name);
     //vision_green_group.debug_info();
 
     // Fake coin group
@@ -59,6 +64,7 @@ int main(int argc, char **argv) {
     NeuronGroup fake_coin_group = snn_net.create_group(fake_coin_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.add_node(1, 3, fake_coin_group_opts.name);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", fake_coin_group.name, fake_coin_group.count, func_exec_time.count());
     //spdlog::info("[main] Size = {0}", fake_coin_group.neurons.size());
     //fake_coin_group.debug_info();
@@ -72,6 +78,7 @@ int main(int argc, char **argv) {
     NeuronGroup real_coin_group = snn_net.create_group(real_coin_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.add_node(1, 4, real_coin_group_opts.name);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", real_coin_group.name, real_coin_group.count, func_exec_time.count());
     //real_coin_group.debug_info();
 
@@ -85,6 +92,7 @@ int main(int argc, char **argv) {
     NeuronGroup serotonin_red_group = snn_net.create_group(serotonin_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.add_node(2, 1, serotonin_group_opts.name);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", serotonin_red_group.name, serotonin_red_group.count, func_exec_time.count());
     //serotonin_group.debug_info();
 
@@ -96,6 +104,7 @@ int main(int argc, char **argv) {
     NeuronGroup serotonin_fake_group = snn_net.create_group(serotonin_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.add_node(2, 2, serotonin_group_opts.name);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", serotonin_fake_group.name, serotonin_fake_group.count, func_exec_time.count());
     //serotonin_group.debug_info();
 
@@ -108,6 +117,7 @@ int main(int argc, char **argv) {
     NeuronGroup dopamine_green_group = snn_net.create_group(dopamine_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.add_node(2, 3, dopamine_group_opts.name);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", dopamine_green_group.name, dopamine_green_group.count, func_exec_time.count());
     //dopamine_group.debug_info();
 
@@ -119,6 +129,7 @@ int main(int argc, char **argv) {
     NeuronGroup dopamine_real_coin_group = snn_net.create_group(dopamine_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.add_node(2, 4, dopamine_group_opts.name);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", dopamine_real_coin_group.name, dopamine_real_coin_group.count, func_exec_time.count());
     //dopamine_group.debug_info();
 
@@ -131,6 +142,7 @@ int main(int argc, char **argv) {
     NeuronGroup good_mt_dopamine_group = snn_net.create_group(mt_dopamine_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.add_node(3, 1, mt_dopamine_group_opts.name);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", good_mt_dopamine_group.name, good_mt_dopamine_group.count, func_exec_time.count());
     //dopamine_group.debug_info();
 
@@ -143,6 +155,8 @@ int main(int argc, char **argv) {
     NeuronGroup bad_mt_serotonin_group = snn_net.create_group(mt_dopamine_group_opts);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.add_node(3, 2, mt_dopamine_group_opts.name);
+    drawer.connect_nodes(vision_red_group.name, serotonin_red_group.name);
     spdlog::trace("[create_group] Group: {0}, Count: {1}, Func exec time (ms): {2}", bad_mt_serotonin_group.name, bad_mt_serotonin_group.count, func_exec_time.count());
     //dopamine_group.debug_info();
 
@@ -153,6 +167,7 @@ int main(int argc, char **argv) {
     snn_net.connect_groups(&vision_red_group, &serotonin_red_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.connect_nodes(vision_red_group.name, serotonin_red_group.name);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
                   vision_red_group.name, vision_red_group.count,
                   serotonin_red_group.name, serotonin_red_group.count,
@@ -163,6 +178,7 @@ int main(int argc, char **argv) {
     snn_net.connect_groups(&vision_green_group, &dopamine_green_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.connect_nodes(vision_green_group.name, dopamine_green_group.name);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
                   vision_green_group.name, vision_green_group.count,
                   dopamine_green_group.name, dopamine_green_group.count,
@@ -175,6 +191,7 @@ int main(int argc, char **argv) {
     //snn_net.connect_groups(&fake_coin_group, &dopamine_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    //drawer.connect_nodes(fake_coin_group.name, dopamine_group.name);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
                   fake_coin_group.name, fake_coin_group.count,
                   serotonin_fake_group.name, serotonin_fake_group.count,
@@ -185,6 +202,7 @@ int main(int argc, char **argv) {
     //snn_net.connect_groups(&real_coin_group, &dopamine_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    //drawer.connect_nodes(real_coin_group.name, dopamine_group.name);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
                   real_coin_group.name, real_coin_group.count,
                   dopamine_real_coin_group.name, dopamine_real_coin_group.count,
@@ -196,6 +214,7 @@ int main(int argc, char **argv) {
     snn_net.connect_groups(&serotonin_red_group, &bad_mt_serotonin_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.connect_nodes(serotonin_red_group.name, bad_mt_serotonin_group.name);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
                   serotonin_red_group.name, serotonin_red_group.count,
                   bad_mt_serotonin_group.name, bad_mt_serotonin_group.count,
@@ -206,6 +225,7 @@ int main(int argc, char **argv) {
     snn_net.connect_groups(&dopamine_green_group, &good_mt_dopamine_group);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
+    drawer.connect_nodes(dopamine_green_group.name, good_mt_dopamine_group.name);
     spdlog::trace("[connect_groups] {0}({1}) -> {2}({3}), Func exec time (ms): {4}",
                   dopamine_green_group.name, dopamine_green_group.count,
                   good_mt_dopamine_group.name, good_mt_dopamine_group.count,
@@ -224,6 +244,7 @@ int main(int argc, char **argv) {
     /*for (Neuron &neuron : serotonin_red_group.neurons) {
         spdlog::debug("Neuron = {0}, In conn num = {1}", neuron.getId(), neuron.getIn().size());
     }*/
+    drawer.save("architect.png");
 
     snn_net.run(sim_steps);
 
