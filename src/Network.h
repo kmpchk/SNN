@@ -20,6 +20,7 @@
 // ROS
 #include "ros/ros.h"
 #include "std_msgs/Float32.h"
+#include "std_msgs/Int8.h"
 
 // Boost
 #include <boost/circular_buffer.hpp>
@@ -40,22 +41,28 @@ private:
     std::unordered_map<std::string, NeuronGroup*> output_neuron_groups;
 
     ros::NodeHandle node_handle;
-    ros::Subscriber red_vis_sub, green_vis_sub;
+    ros::Subscriber red_vis_sub, green_vis_sub, coin_acceptor_sub;
     boost::circular_buffer<double> red_vis_data{10};
     boost::circular_buffer<double> green_vis_data{10};
-    std::mutex red_vis_mutex, green_vis_mutex;
+    boost::circular_buffer<int> coin_acceptor_data{10};
+    std::mutex red_vis_mutex, green_vis_mutex, coin_acceptor_mutex;
     std::thread ros_spin;
 
     const std::string red_vision_group_topic = "/card_detect/red";
     const std::string green_vision_group_topic = "/card_detect/green";
+    const std::string coin_acceptor_topic = "/coin_acceptor";
+    enum COIN_TYPE {REAL=1, FAKE=0};
 
     std::vector<std::vector<std::uint8_t>> red_neurons_spike_train;
 
     std::size_t cur_sim_step;
 
     NeuronGroup *red_group_ = nullptr, *serotonin_red_group_ = nullptr, *bad_mt_serotonin_group_ = nullptr,
-                *green_group_ = nullptr, *dopamine_green_group_ = nullptr, *good_mt_dopamine_group_ = nullptr;
+                *green_group_ = nullptr, *dopamine_green_group_ = nullptr, *good_mt_dopamine_group_ = nullptr,
+                *fake_coin_group_ = nullptr, *real_coin_group_ = nullptr, *serotonin_fake_coin_group_ = nullptr,
+                *dopamine_real_coin_group_ = nullptr;
     std::unordered_map<int, int> output_neurons_spiked;
+    std::unordered_map<int, int> bad_states, good_states;
 
 public:
     Network() = default;
@@ -81,7 +88,14 @@ public:
                                                                [&](const std_msgs::Float32ConstPtr &message){
            const std::lock_guard<std::mutex> lock(green_vis_mutex);
            green_vis_data.push_back(message->data);
-       });
+        });
+
+        // Coin acceptor subscriber
+        coin_acceptor_sub = node_handle.subscribe<std_msgs::Int8>(coin_acceptor_topic, 10,
+                                                               [&](const std_msgs::Int8ConstPtr &message){
+          const std::lock_guard<std::mutex> lock(coin_acceptor_mutex);
+          coin_acceptor_data.push_back(message->data);
+        });
 
         ros_spin = std::thread([](){
             auto wait_time = ros::Duration(0.001);
@@ -108,8 +122,12 @@ public:
             //spdlog::debug("No incoming message. Waiting...");
             ros::Duration(0.001).sleep();
         }
+        while (coin_acceptor_data.empty()) {
+            //spdlog::debug("No incoming message. Waiting...");
+            ros::Duration(0.001).sleep();
+        }
         code_exec_time = (high_resolution_clock::now() - t1);
-        spdlog::debug("[Initialization] Init exec time {0} (ms)", code_exec_time.count());
+        spdlog::debug("[Initialization] Init took {0} (ms)", code_exec_time.count());
 
         //ros::Duration(0.5).sleep();
 
@@ -128,28 +146,36 @@ public:
             spdlog::trace("Output group: {0}, Address = {1}", output_neuron_group.first, fmt::ptr(output_neuron_group.second));
         }
 
+        // Input groups
         green_group_ = input_neuron_groups["vision_green"];
-        dopamine_green_group_ = hidden_neuron_groups["dopamine_green_vision"];
-        good_mt_dopamine_group_ = output_neuron_groups["good_mt_dopamine"];
-
+        assert (green_group_ != nullptr);
         red_group_ = input_neuron_groups["vision_red"];
+        assert (red_group_ != nullptr);
+        fake_coin_group_ = input_neuron_groups["fake_coin"];
+        assert (fake_coin_group_ != nullptr);
+        real_coin_group_ = input_neuron_groups["real_coin"];
+        assert (real_coin_group_ != nullptr);
+
+        // Hidden groups
+        dopamine_green_group_ = hidden_neuron_groups["dopamine_green_vision"];
+        assert (dopamine_green_group_ != nullptr);
+        dopamine_real_coin_group_ = hidden_neuron_groups["dopamine_real_coin"];
+        assert (dopamine_real_coin_group_ != nullptr);
         serotonin_red_group_ = hidden_neuron_groups["serotonin_red_vision"];
+        assert (serotonin_red_group_ != nullptr);
+        serotonin_fake_coin_group_ = hidden_neuron_groups["serotonin_fake_coin"];
+        assert (serotonin_fake_coin_group_ != nullptr);
+
+        // Output groups
+        good_mt_dopamine_group_ = output_neuron_groups["good_mt_dopamine"];
+        assert (good_mt_dopamine_group_ != nullptr);
         bad_mt_serotonin_group_ = output_neuron_groups["bad_mt_serotonin"];
-        //red_neurons_spike_train.resize(red_group->neurons.size(), std::vector<std::uint8_t>(sim_steps, false));
-
-        //NeuronGroup *real_coin = input_neuron_groups["real_coin"];
-
-        //NeuronGroup *fake_coin = input_neuron_groups["fake_coin"];
-
-        //NeuronGroup *dopamine = hidden_neuron_groups["dopamine"];
-
-        /*std::mt19937 rnd(std::random_device{}());
-        std::uniform_int_distribution<> distrib(0, 1);*/
+        assert (bad_mt_serotonin_group_ != nullptr);
 
         // The amount of time to wait before returning if no message is received
         auto wait_time = ros::Duration(0.01);
 
-        for (size_t step = 0; step < 1000; step++)
+        for (size_t step = 0; step < sim_steps; step++)
         {
             cur_sim_step = step;
 
@@ -157,20 +183,24 @@ public:
 
             const std::lock_guard<std::mutex> lock_red(red_vis_mutex);
             const std::lock_guard<std::mutex> lock_green(green_vis_mutex);
+            const std::lock_guard<std::mutex> lock_coin_acpt(coin_acceptor_mutex);
             //spdlog::debug("RED VIS VAL (ROS): {0}", red_vis_data.back());
 
             // RED VISION
             int red_neurons_count_spiked = normalize_number(red_vis_data.back(), 0.0, 1.0, 0.0, red_group_->count);
             int green_neurons_count_spiked = normalize_number(green_vis_data.back(), 0.0, 1.0, 0.0, green_group_->count);
+            int coin = coin_acceptor_data.back();
+            COIN_TYPE ct;
+            ct = coin ? COIN_TYPE::REAL : COIN_TYPE::FAKE;
 
             // PROCESS INPUT LAYER
-            simulate_input_groups(red_neurons_count_spiked);
+            //simulate_input_groups(red_neurons_count_spiked, green_neurons_count_spiked, ct);
 
             // PROCESS HIDDEN LAYER
-            simulate_hidden_groups();
+            //simulate_hidden_groups();
 
             // PROCESS OUTPUT LAYER
-            simulate_out_groups();
+            //simulate_out_groups();
 
 
             spdlog::debug("Progress {:.1f}%", step * (100.0 / sim_steps));
@@ -181,31 +211,76 @@ public:
 
         // MOTOR CORTEX
         // 1. Calculate OUT groups
-        /*for (auto item : output_neurons_spiked)
+        for (auto item : output_neurons_spiked)
         {
             spdlog::debug("SIM STEP = {0}, SPIKED OUT = {1}", item.first, item.second);
-        }*/
+        }
     }
 
-    void simulate_input_groups(int red_cnt, int green_cnt=0, int real_cnt=0, int fake_cnt=0)
+    void simulate_input_groups(int red_cnt, int green_cnt, COIN_TYPE ct)
     {
-        // RED
-        std::vector<std::reference_wrapper<Neuron>> red_random_neurons;
-        std::sample(red_group_->neurons.begin(), red_group_->neurons.end(),
-                    std::back_inserter(red_random_neurons),
-                    red_cnt,
-                    std::mt19937{std::random_device{}()});
-        // RED layer spikes
+        // Common params
         int spiked = 0;
-        for (Neuron &neuron : red_random_neurons) {
+        std::vector<std::reference_wrapper<Neuron>> random_neurons;
+        static auto rg = std::mt19937{std::random_device{}()};
+
+        /// RED LAYER
+        // 1. Create container
+        std::sample(red_group_->neurons.begin(), red_group_->neurons.end(),
+                    std::back_inserter(random_neurons),
+                    red_cnt,
+                    rg);
+        // 2. Spike
+        spiked = 0;
+        for (Neuron &neuron : random_neurons) {
             neuron.spike();
         }
+        // 3. Check
         for (Neuron& neuron : red_group_->neurons) {
             auto state = neuron.check(false);
             if (state == State::ActionStart)
                 spiked++;
         }
-        spdlog::debug("[INPUT SIMULATION] TIME = {0}, SPIKED = {1}", cur_sim_step, spiked);
+        //spdlog::debug("[INPUT SIMULATION] [RED] TIME = {0}, SPIKED = {1}", cur_sim_step, spiked);
+
+        /// GREEN LAYER
+        // 1. Create container
+        random_neurons.clear();
+        std::sample(green_group_->neurons.begin(), green_group_->neurons.end(),
+                    std::back_inserter(random_neurons),
+                    green_cnt,
+                    rg);
+        // 2. Spike
+        spiked = 0;
+        for (Neuron &neuron : random_neurons) {
+            neuron.spike();
+        }
+        // 3. Check
+        for (Neuron& neuron : green_group_->neurons) {
+            auto state = neuron.check(false);
+            if (state == State::ActionStart)
+                spiked++;
+        }
+
+        /// COIN LAYER
+        if (ct == COIN_TYPE::REAL)
+        // 1. Create container
+        random_neurons.clear();
+        std::sample(green_group_->neurons.begin(), green_group_->neurons.end(),
+                    std::back_inserter(random_neurons),
+                    green_cnt,
+                    rg);
+        // 2. Spike
+        spiked = 0;
+        for (Neuron &neuron : random_neurons) {
+            neuron.spike();
+        }
+        // 3. Check
+        for (Neuron& neuron : green_group_->neurons) {
+            auto state = neuron.check(false);
+            if (state == State::ActionStart)
+                spiked++;
+        }
     }
 
     void simulate_hidden_groups()
@@ -231,6 +306,7 @@ public:
                 spiked++;
         }
         spdlog::debug("[OUT SIMULATION] TIME = {0}, SPIKED = {1}", cur_sim_step, spiked);
+        output_neurons_spiked[cur_sim_step] = spiked;
     }
 
     // Create neuron group
@@ -275,8 +351,17 @@ public:
                 output_neuron_groups[group2->name] = group2;
         }
 
+        if (group1->group_type == GroupType::HIDDEN && group2->group_type == GroupType::OUTPUT) {
+            for (int g2_n_idx = 0; g2_n_idx < group2->count; g2_n_idx++) {
+                for (int g1_n_idx = 0; g1_n_idx < group1->count; g1_n_idx++) {
+                    group2->neurons[g2_n_idx].connect(group1->neurons[g1_n_idx]);
+                }
+            }
+            return;
+        }
+
         std::mt19937 rnd(std::random_device{}());
-        std::size_t connection_num_mean = group1->count / 3;
+        std::size_t connection_num_mean = group1->count / 2;
         std::size_t connection_num_stddev = 0;
         auto conn_num_dist = NormDist(connection_num_mean, connection_num_stddev);
         std::vector<int> ids(group1->count);
