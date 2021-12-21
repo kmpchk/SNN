@@ -6,39 +6,72 @@
 #include <iostream>
 #include "spdlog/spdlog.h"
 
-Drawer::Drawer()
+Drawer::Drawer(float a, float b, float b2, float c, int chars)
 {
+    radius = a;
+    distx = b;
+    disty = b2;
+    margin = c;
+    char_size = chars;
     this->texture;
-    texture.create(size_x, size_y);
     if (!font.loadFromFile("../../../res/calibri.ttf")){
         std::cout << "font not found";
     }
+    for (int i=0; i < levels; i++) {
+        numbers.emplace_back(1);
+    }
 }
 
-void Drawer::add_node(int level, int number, std::string text)
+void Drawer::add_node(int level, std::string text)
 {
-    sf::CircleShape shape(radius);
-    int posx = margin + (dist + radius * 2) * (number - 1);
-    int posy = margin + (dist + radius * 2) * level;
-
-    shape.setFillColor(sf::Color::White);
-    shape.setPosition(posx, size_x - posy);
-    texture.draw(shape);
-
-    sf::Text label;
-    label.setFont(font);
-    label.setString(text);
-    label.setColor(sf::Color::Black);
-    label.setCharacterSize(32);
-    label.setScale(1.f, -1.f);
-    label.setPosition(posx, size_x - posy + radius + margin * 2);
-    texture.draw(label);
+    int number = numbers[level];
+    numbers[level]++;
+    int posx = margin + (distx + radius * 2) * (number - 1);
+    int posy = margin + disty * (level - 1) + radius * 2 * level;
 
     Pos pos;
     pos.posx = posx;
-    pos.posy = size_x - posy;
+    pos.posy = size_y - posy;
     pos.name = text;
+
     nodes.emplace_back(pos);
+
+    if (posx > size_x - radius){
+        size_x = size_x + radius * 4;
+    }
+
+    if (posy > size_y - radius){
+        size_y = size_y + radius * 4;
+        for (int i=0; i < nodes.size(); i++) {
+            nodes[i].posy += radius * 4;
+        }
+    }
+}
+
+void Drawer::init_texture(){
+    texture.create(size_x, size_y);
+}
+
+void Drawer::draw()
+{
+    for (int i=0; i < nodes.size(); i++) {
+        int posx = nodes[i].posx;
+        int posy = nodes[i].posy;
+        std::string text = nodes[i].name;
+        sf::CircleShape shape(radius);
+        shape.setFillColor(sf::Color::White);
+        shape.setPosition(posx, posy);
+        texture.draw(shape);
+
+        sf::Text label;
+        label.setFont(font);
+        label.setString(text);
+        label.setColor(sf::Color::Black);
+        label.setCharacterSize(char_size);
+        label.setScale(1.f, -1.f);
+        label.setPosition(posx + 2, posy + radius + char_size / 2);
+        texture.draw(label);
+    }
 }
 
 void Drawer::connect_nodes(std::string name1, std::string name2)
@@ -57,7 +90,7 @@ void Drawer::connect_nodes(std::string name1, std::string name2)
     }
     
     //spdlog::debug("[a x = {0}, y = {1}, name = {2}", posa.posx, posa.posy, posa.name);
-    //spdlog::debug("[a x = {0}, y = {1}, name = {2}", posb.posx, posb.posy, posb.name);
+    //spdlog::debug("[b x = {0}, y = {1}, name = {2}", posb.posx, posb.posy, posb.name);
     
     sf::VertexArray lines(sf::Lines, 2);
 

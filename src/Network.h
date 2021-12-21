@@ -28,6 +28,7 @@
 //#include "Connection.h"
 //#include "Generator.h"
 #include "NeuronGroup.h"
+#include "Drawer.h"
 
 typedef std::normal_distribution<float> NormDist;
 typedef std::uniform_int_distribution<> WeightDist, UniDist;
@@ -233,16 +234,17 @@ public:
     }
 
     // Create neuron group
-    NeuronGroup create_group(GroupOptions &group_opts)
+    NeuronGroup create_group(GroupOptions &group_opts, Drawer &darwer)
     {
         // TODO: check group_opts fields
         if (group_opts.neurons_count <= 0)
             group_opts.neurons_count = 50; // default neurons count
-        return NeuronGroup(group_opts);
+        return NeuronGroup(group_opts, darwer);
     }
 
-    void connect_groups(NeuronGroup *group1, NeuronGroup *group2)
+    void connect_groups(NeuronGroup *group1, NeuronGroup *group2, Drawer *darwer)
     {
+        
         // Check groups
         assert(group1->group_type != GroupType::OUTPUT);
         assert(group2->group_type != GroupType::INPUT);
@@ -295,6 +297,7 @@ public:
 
             for (const int &group1_neuron_idx : sample_group1_neuron_ids) {
                 group2->neurons[g2_n_idx].connect(group1->neurons[group1_neuron_idx]);
+                darwer->connect_nodes(group1->name + std::to_string(group1_neuron_idx), group2->name + std::to_string(g2_n_idx));
             }
         }
     }

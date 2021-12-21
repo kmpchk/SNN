@@ -8,6 +8,7 @@
 // SNN
 #include "Type.h"
 #include "Neuron.h"
+#include "Drawer.h"
 
 typedef struct _GroupOptions
 {
@@ -19,7 +20,7 @@ typedef struct _GroupOptions
 
 class NeuronGroup {
 public:
-    NeuronGroup(GroupOptions &group_opts);
+    NeuronGroup(GroupOptions &group_opts, Drawer &drawer);
 
     // Debug info
     void debug_info();

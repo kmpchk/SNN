@@ -14,19 +14,26 @@ typedef struct _Pos
 class Drawer {
 public:
 
-    Drawer();
+    Drawer(float, float, float, float, int);
 
-    const float radius = 140.f;
-    const float margin = 10.f;
-    const float dist = 100.f;
-    int size_x = 2000;
-    int size_y = 2000;
+    float radius;
+    float margin;
+    float distx;
+    float disty;
+    int line_width;
+    int char_size = 26;
+    const int levels = 5;
+    int size_x = 200;
+    int size_y = 200;
     std::vector<Pos> nodes;
+    std::vector<int> numbers;
     sf::Font font;
 
     sf::RenderTexture texture;
     void save(std::string name);
-    void add_node(int level, int number, std::string text);
+    void draw();
+    void init_texture();
+    void add_node(int level, std::string text);
     void connect_nodes(std::string name1, std::string name2);
 };
 
