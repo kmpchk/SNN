@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
 
     // Fake Coin -> Serotonin
     t1 = high_resolution_clock::now();
-    snn_net.connect_groups(&fake_coin_group, &serotonin_fake_group);
+    snn_net.connect_groups(&fake_coin_group, &serotonin_fake_group, &drawer_top);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     //drawer.connect_nodes(fake_coin_group.name, dopamine_group.name);
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
 
     // Real Coin -> Dopamine
     t1 = high_resolution_clock::now();
-    snn_net.connect_groups(&real_coin_group, &dopamine_green_group);
+    snn_net.connect_groups(&real_coin_group, &dopamine_green_group, &drawer_top);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     //drawer.connect_nodes(real_coin_group.name, dopamine_group.name);
@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
 
     // serotonin_fake_group -> bad_mt_serotonin_group
     t1 = high_resolution_clock::now();
-    snn_net.connect_groups(&serotonin_fake_group, &bad_mt_serotonin_group);
+    snn_net.connect_groups(&serotonin_fake_group, &bad_mt_serotonin_group, &drawer_top);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     drawer.connect_nodes(serotonin_fake_group.name, bad_mt_serotonin_group.name);
@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
 
     // dopamine_real_coin_group -> good_mt_dopamine_group
     t1 = high_resolution_clock::now();
-    snn_net.connect_groups(&dopamine_real_coin_group, &good_mt_dopamine_group);
+    snn_net.connect_groups(&dopamine_real_coin_group, &good_mt_dopamine_group, &drawer_top);
     t2 = high_resolution_clock::now();
     func_exec_time = (t2 - t1);
     drawer.connect_nodes(dopamine_real_coin_group.name, good_mt_dopamine_group.name);
