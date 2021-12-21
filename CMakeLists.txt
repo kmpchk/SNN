@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 project(SNN)
 
@@ -23,7 +23,7 @@ find_package(Boost REQUIRED
         COMPONENTS
         system
         )
-
+list(APPEND CMAKE_MODULE_PATH "/usr/share/SFML/cmake/Modules")
 find_package(SFML REQUIRED
         COMPONENTS
         graphics
