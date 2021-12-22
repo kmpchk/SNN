@@ -13,7 +13,7 @@ if __name__ == "__main__":
     real_coin = 1
     while not ros.is_shutdown():
         # coin = int(input("Enter a coin:\n"))
-        coin = fake_coin
+        coin = real_coin
         # print("Coin detected: ", coin)
         pub.publish(coin)
         rate.sleep()

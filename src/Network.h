@@ -180,6 +180,10 @@ public:
         bad_mt_serotonin_group_ = output_neuron_groups["bad_mt_serotonin"];
         assert (bad_mt_serotonin_group_ != nullptr);
 
+		spdlog::debug("Everything is OK. System is Ready.");
+	    spdlog::debug("Press Enter to start!\n");
+	    std::cin.get();
+
         // The amount of time to wait before returning if no message is received
         auto wait_time = ros::Duration(0.001);
 
@@ -242,9 +246,11 @@ public:
         //spdlog::debug("BAD STATES = {0}", bad_spikes);
 
         BEHAVIOR bh = good_spikes > bad_spikes ? BEHAVIOR::HAPPY : BEHAVIOR::ANGRY;
-        std::string bh_str = bh ? "HAPPY DOG" : "ANGRY DOG";
+        std::string bh_str = bh ? "HAPPY_DOG" : "ANGRY_DOG";
         spdlog::debug("BEHAVIOR = {0}", bh_str);
-        mt_pub.publish(bh);
+		std_msgs::String mt_data;
+		mt_data.data = bh_str;
+        mt_pub.publish(mt_data);
 
         // 1. Calculate OUT groups
         /*for (auto item : output_neurons_spiked)

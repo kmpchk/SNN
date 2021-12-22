@@ -85,9 +85,90 @@ def dog_happy():
     velocity_publisher.publish(vel_msg)
     #rospy.spin()
 
+def dog_angry():
+    # Receiveing the user's input
+    print("Happy dog pattern activated!")
+    speed = 50 #input("Input your speed (degrees/sec):")
+    angle = 50 #input("Type your distance (degrees):")
+    clockwise = True #input("Clockwise?: ") #True or false
+
+    #Converting from angles to radians
+    angular_speed = speed*2*PI/360
+    relative_angle = angle*2*PI/360
+
+    #We wont use linear components
+    vel_msg = Twist()
+
+    repeat = 5
+
+    for r in range(0, repeat):
+        # Clockwise
+        t0 = rospy.Time.now().to_sec()
+        current_angle = 0
+        vel_msg = Twist()
+        vel_msg.angular.z = -abs(angular_speed)
+        while(current_angle < relative_angle):
+            velocity_publisher.publish(vel_msg)
+            t1 = rospy.Time.now().to_sec()
+            current_angle = angular_speed*(t1-t0)
+
+        # Return to Start position
+        t0 = rospy.Time.now().to_sec()
+        current_angle = 0
+        vel_msg = Twist()
+        vel_msg.angular.z = abs(angular_speed)
+        while(current_angle < relative_angle):
+            velocity_publisher.publish(vel_msg)
+            t1 = rospy.Time.now().to_sec()
+            current_angle = angular_speed*(t1-t0)
+
+        # Anti-Clockwise
+        t0 = rospy.Time.now().to_sec()
+        current_angle = 0
+        vel_msg = Twist()
+        vel_msg.angular.z = abs(angular_speed)
+        while(current_angle < relative_angle):
+            velocity_publisher.publish(vel_msg)
+            t1 = rospy.Time.now().to_sec()
+            current_angle = angular_speed*(t1-t0)
+
+        # Return to Start position
+        t0 = rospy.Time.now().to_sec()
+        current_angle = 0
+        vel_msg = Twist()
+        vel_msg.angular.z = -abs(angular_speed)
+        while(current_angle < relative_angle):
+            velocity_publisher.publish(vel_msg)
+            t1 = rospy.Time.now().to_sec()
+            current_angle = angular_speed*(t1-t0)
+
+    # Rotating
+    speed = 70
+    angle = 360
+    angular_speed = speed*2*PI/360
+    relative_angle = angle*2*PI/360
+    t0 = rospy.Time.now().to_sec()
+    current_angle = 0
+    vel_msg = Twist()
+    vel_msg.angular.z = -abs(angular_speed)
+    while(current_angle < relative_angle):
+        velocity_publisher.publish(vel_msg)
+        t1 = rospy.Time.now().to_sec()
+        current_angle = angular_speed*(t1-t0)
+
+    #Forcing our robot to stop
+    vel_msg = Twist()
+    vel_msg.angular.z = 0
+    velocity_publisher.publish(vel_msg)
+    #rospy.spin()
 
 def mt_clbk(data):
-    rospy.loginfo("Pattern = %s", data.data)
+    pattern = data.data
+    rospy.loginfo("Pattern = %s", pattern)
+    if (pattern == "HAPPY_DOG"):
+        dog_happy()
+    elif (pattern == "ANGRY_DOG"):
+        dog_angry
 
 
 if __name__ == '__main__':
