@@ -14,7 +14,7 @@ Drawer::Drawer(float a, float b, float b2, float c, int chars)
     margin = c;
     char_size = chars;
     this->texture;
-    if (!font.loadFromFile("../../../res/calibri.ttf")){
+    if (!font.loadFromFile("res/calibri.ttf")) {
         std::cout << "font not found";
     }
     for (int i=0; i < levels; i++) {

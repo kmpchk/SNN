@@ -27,7 +27,7 @@ NeuronGroup::NeuronGroup(GroupOptions &group_opts, Drawer &drawer)
         break;
     }
     for (int idx = 0; idx < group_opts.neurons_count; idx++) {
-        neurons.emplace_back(Neuron(idx, neurons_type, 1));
+        neurons.emplace_back(Neuron(idx, neurons_type, 1, group_type));
         drawer.add_node(level, group_opts.name + std::to_string(idx));
     }
     name = group_opts.name;

@@ -65,6 +65,20 @@ def dog_happy():
             t1 = rospy.Time.now().to_sec()
             current_angle = angular_speed*(t1-t0)
 
+    # Rotating
+    speed = 70
+    angle = 360
+    angular_speed = speed*2*PI/360
+    relative_angle = angle*2*PI/360
+    t0 = rospy.Time.now().to_sec()
+    current_angle = 0
+    vel_msg = Twist()
+    vel_msg.angular.z = -abs(angular_speed)
+    while(current_angle < relative_angle):
+        velocity_publisher.publish(vel_msg)
+        t1 = rospy.Time.now().to_sec()
+        current_angle = angular_speed*(t1-t0)
+
     #Forcing our robot to stop
     vel_msg = Twist()
     vel_msg.angular.z = 0
@@ -81,7 +95,7 @@ if __name__ == '__main__':
         #Starts a new node
         rospy.init_node('motor_cortex', anonymous=True)
         velocity_publisher = rospy.Publisher('/mobile_base_controller/cmd_vel', Twist, queue_size=10)
-        rospy.Subscriber("mt_pattern", String, mt_clbk)
+        rospy.Subscriber("/mt_pattern", String, mt_clbk)
         rospy.spin()
     except rospy.ROSInterruptException:
         pass

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <ostream>
+#include <random>
 
 #include "Type.h"
 
@@ -35,6 +36,7 @@ private:
     const IdType ID;
     const NeuronType NEURON;
     const NoiseType NOISE;
+    const GroupType GT;
     const WeightType MIN_WEIGHT = 0;
     const WeightType MAX_WEIGHT = 255;
     StateType state = 0;
@@ -85,12 +87,20 @@ private:
     }
 
 public:
-    Neuron(const IdType id, const NeuronType neuron, const NoiseType noise) :
-            ID(id), NEURON(neuron), NOISE(noise), in(), out() {}
+    Neuron(const IdType id, const NeuronType neuron, const NoiseType noise, const GroupType gt) :
+            ID(id), NEURON(neuron), NOISE(noise), GT(gt), in(), out() {}
 
     pair<Neuron *, WeightType> connect(Neuron &neuron) {
         const WeightType DEFAULT_WEIGHT = 128;
-        threshold = (in.size() + 1) * DEFAULT_WEIGHT / 4;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> distrib (DEFAULT_WEIGHT / 6, DEFAULT_WEIGHT / 2);
+        if (GT == GroupType::INPUT)
+            threshold = (in.size() + 1) * DEFAULT_WEIGHT / 4; //* distrib(gen);
+        if (GT == GroupType::HIDDEN)
+            threshold = (in.size() + 1) * DEFAULT_WEIGHT / 2;
+        if (GT == GroupType::OUTPUT)
+            threshold = (in.size() + 1) * DEFAULT_WEIGHT / 3;
         neuron.out.push_back(this);
         return in.emplace_back(&neuron, DEFAULT_WEIGHT);
     }
